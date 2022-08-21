@@ -1,4 +1,3 @@
-
 // The "Image" DSL is the easiest way to create images
 import doodle.effect.Writer.{Jpg, Png}
 import doodle.image._
@@ -19,55 +18,56 @@ import scala.util.Random
 import doodle.java2d.effect.Size
 import doodle.java2d.effect.Center.CenteredOnPicture
 import doodle.interact.algebra.Redraw
-import doodle.java2d.effect.Canvas.apply  
-  import cats.implicits._
-  import doodle.reactor._
-  import doodle.image.syntax._
-  import doodle.image.syntax.core._
-  import doodle.reactor._
+import doodle.java2d.effect.Canvas.apply
+import cats.implicits._
+import doodle.reactor._
+import doodle.image.syntax._
+import doodle.image.syntax.core._
+import doodle.reactor._
 import java.awt.RadialGradientPaint
 
+object Main extends App {
 
-object Main extends App{
+//image consists of r number of rows
+//each row contains a series of circles which spans the width of the frame
+//each circle is filled with a colour which is selected randomly from a list
+//each circle has a consistent transparency
 
-  case class CircleParams(diam: Double, xValue: Int, yValue: Int)
+//To make concentric circles, the x must be small enough that it looks like it's all within one circle
+//If the x is larger then they will be overlap
+case class CircleParams(diam: Double, xValue: Int)
 
-  val listOfRandomCircleParams: List[CircleParams] = List.tabulate(100)(n => CircleParams(Random.nextInt(100).toDouble, Random.nextInt(10), 100))
-  
-  def createARandomListOfCircleParams: List[CircleParams] = {
-  List.tabulate(100)(n => CircleParams(Random.nextInt(100).toDouble, Random.nextInt(10), 100))}
+val circlesPerRow = 100
+val maxCircleRadius = 80
+val maxXValue = 10
 
-  def createCircleFromParams(circ: CircleParams): Image = {
-    Image.circle(circ.diam).at(circ.xValue, circ.yValue)
+object Circles {
+    def singleCircle(radius: Int, xValue: Int, yValue: Int): Image = {
+      Image
+      .circle(Random.nextInt(radius))
+      .at(Random.nextInt(xValue), yValue)
+      .fillColor(Color.rgba(Random.nextInt(255), 0, Random.nextInt(175), Random.between(0.0, 0.5)))
+      .noStroke
+    }
+
+    def listOfCircles(numberPerRow: Int): List[Image] = {
+    List.tabulate(numberPerRow)(_ => singleCircle(maxCircleRadius, maxXValue, 100))
+  }
+    
+    def allCircles(circ:List[Image]): Image = {
+      circ match {
+        case Nil => Image.empty
+        case x :: tail => x.beside(allCircles(tail))
+      }
+    }
+
   }
 
-  lazy val listOfCircles: List[Image] = listOfRandomCircleParams.map(createCircleFromParams)
-  val anotherListOfCircles: List[Image] = listOfRandomCircleParams.map(createCircleFromParams)
-  
-   def combineCircles(circs: List[Image]): Image = circs match {
-      case Nil => Image.empty
-      case x :: tail => x.on(combineCircles(tail))
-   }
+ val frame = Frame.size(600,600).background(Color.rgb(100, 100, 200))
+ val image = Circles.allCircles(Circles.listOfCircles(100))
 
-  def createAListOfSets(howMany: Int): List[Image] = {
-    List.tabulate(10)(_ => combineCircles(listOfCircles))
-  }
+  Reactor.init(image).withRender(identity).run(frame)
+  //TODO create a set of stacked circles in another location
+  //Create a line of overlapping circles
 
-  def lineUpSets(sets: List[Image]): Image = sets match {
-    case Nil => Image.empty 
-    case x :: tail => x.beside(lineUpSets(tail))
-  }
-
-  val frame = Frame.size(600,600).background(Color.rgb(100, 100, 200))
-
-  val image: Image = lineUpSets(createAListOfSets(10))
-
-      //Reactor.init(combineCircles(listOfCircles)).withRender(identity).run(frame)    
-      //Reactor.init(set1.beside(set2).beside(set3)).withRender(identity).run(frame)
-      Reactor.init(image).withRender(identity).run(frame)
-
-
-      //TODO create a set of stacked circles in another location 
-      //Create a line of overlapping circles 
-
-  }
+}
