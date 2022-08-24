@@ -32,9 +32,11 @@ object Main extends App {
   val circlesPerRow   = 100
   val maxCircleRadius = 80
   val maxXValue       = 10
-  val yValues = List.fill(10)(100) ++ List.fill(10)(200) ++ List.fill(10)(300) ++ List.fill(10)(400) ++ List.fill(10)(500) ++ List.fill(10)(600)
 
   object Circles {
+    def createYValues(count: Int, init: List[Int]): List[Int] =
+      init.flatMap(y => List.fill(count)(y))
+
     def printAllCircles(circ: List[Image]): Image =
       circ match {
         case Nil       => Image.empty
@@ -48,13 +50,15 @@ object Main extends App {
           .circle(p.radius)
           .at(p.xValue, p.yValue)
           .fillColor(Color.rgba(Random.nextInt(255), 0, Random.nextInt(175), Random.between(0.0, 0.5)))
+          .noStroke
       )
     }
   }
 
-  val frame = Frame.fitToPicture(10).background(Color.rgb(100, 100, 200))
+  val frame                       = Frame.fitToPicture(10).background(Color.rgb(100, 100, 200))
+  val yValues                     = Circles.createYValues(100, List(100, 200, 300, 400, 500))
   val circlesToPrint: List[Image] = Circles.createABunchOfCircles(yValues)
-  val image = Circles.printAllCircles(circlesToPrint)
+  val image                       = Circles.printAllCircles(circlesToPrint)
 
   Reactor.init(image).withRender(identity).run(frame)
 }
