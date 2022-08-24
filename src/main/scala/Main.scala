@@ -27,47 +27,34 @@ import doodle.reactor._
 import java.awt.RadialGradientPaint
 
 object Main extends App {
+  case class CircleParams(radius: Int, xValue: Int, yValue: Int)
 
-//image consists of r number of rows
-//each row contains a series of circles which spans the width of the frame
-//each circle is filled with a colour which is selected randomly from a list
-//each circle has a consistent transparency
+  val circlesPerRow   = 100
+  val maxCircleRadius = 80
+  val maxXValue       = 10
+  val yValues = List.fill(10)(100) ++ List.fill(10)(200) ++ List.fill(10)(300) ++ List.fill(10)(400) ++ List.fill(10)(500) ++ List.fill(10)(600)
 
-//To make concentric circles, the x must be small enough that it looks like it's all within one circle
-//If the x is larger then they will be overlap
-case class CircleParams(diam: Double, xValue: Int)
-
-val circlesPerRow = 100
-val maxCircleRadius = 80
-val maxXValue = 10
-
-object Circles {
-    def singleCircle(radius: Int, xValue: Int, yValue: Int): Image = {
-      Image
-      .circle(Random.nextInt(radius))
-      .at(Random.nextInt(xValue), yValue)
-      .fillColor(Color.rgba(Random.nextInt(255), 0, Random.nextInt(175), Random.between(0.0, 0.5)))
-      .noStroke
-    }
-
-    def listOfCircles(numberPerRow: Int): List[Image] = {
-    List.tabulate(numberPerRow)(_ => singleCircle(maxCircleRadius, maxXValue, 100))
-  }
-    
-    def allCircles(circ:List[Image]): Image = {
+  object Circles {
+    def printAllCircles(circ: List[Image]): Image =
       circ match {
-        case Nil => Image.empty
-        case x :: tail => x.beside(allCircles(tail))
+        case Nil       => Image.empty
+        case x :: tail => x.on(printAllCircles(tail))
       }
-    }
 
+    def createABunchOfCircles(ys: List[Int]): List[Image] = {
+      val circleParamsList = ys.map(y => CircleParams(Random.nextInt(100), Random.nextInt(600), y))
+      circleParamsList.map(p =>
+        Image
+          .circle(p.radius)
+          .at(p.xValue, p.yValue)
+          .fillColor(Color.rgba(Random.nextInt(255), 0, Random.nextInt(175), Random.between(0.0, 0.5)))
+      )
+    }
   }
 
- val frame = Frame.size(600,600).background(Color.rgb(100, 100, 200))
- val image = Circles.allCircles(Circles.listOfCircles(100))
+  val frame = Frame.fitToPicture(10).background(Color.rgb(100, 100, 200))
+  val circlesToPrint: List[Image] = Circles.createABunchOfCircles(yValues)
+  val image = Circles.printAllCircles(circlesToPrint)
 
   Reactor.init(image).withRender(identity).run(frame)
-  //TODO create a set of stacked circles in another location
-  //Create a line of overlapping circles
-
 }
